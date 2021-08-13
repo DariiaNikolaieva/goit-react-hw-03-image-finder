@@ -1,5 +1,6 @@
 import { Component } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
+import { connect } from "react-redux";
 
 import Searchbar from "./components/Searchbar/Searchbar";
 import ImageGallery from "./components/ImageGallery/ImageGallery";
@@ -7,10 +8,14 @@ import LoaderSpinner from "./components/Loader/Loader";
 import Modal from "./components/Modal/Modal";
 import Button from "./components/Button/Button";
 
-import getFetch from "./services/API";
+import { getGalleryItems } from "./redux/operations";
+import { galleryItems } from "./redux/selectors";
+
+// import getFetch from "./services/API";
 
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
+// import ImageGalleryItem from "./components/ImageGalleryItem/ImageGalleryItem";
 
 class App extends Component {
   state = {
@@ -27,11 +32,12 @@ class App extends Component {
     const prevQuery = prevState.query;
     const nextQuery = this.state.query;
     if (prevQuery !== nextQuery) {
-      this.getImagesList();
+      this.props.getGalleryItems(this.state.query);
+      // this.getImagesList();
     }
-    if (this.state.imagesList.length - prevState.imagesList.length === 12) {
-      this.setState({ button: true });
-    }
+    // if (this.state.imagesList.length - prevState.imagesList.length === 12) {
+    //   this.setState({ button: true });
+    // }
   }
 
   onSubmit = (query) =>
@@ -43,30 +49,29 @@ class App extends Component {
       error: null,
     });
 
-  getImagesList = () => {
-    const { query, page } = this.state;
-    this.setState({ loading: true });
-
-    getFetch(query, page)
-      .then((imagesList) => {
-        if (imagesList.length === 0) {
-          this.setState({ button: false });
-          toast.error("No results. Try another query");
-          return;
-        } else if (imagesList.length <= 12) {
-          this.setState({ button: false });
-        }
-        this.setState((prevState) => ({
-          imagesList: [...prevState.imagesList, ...imagesList],
-          page: prevState.page + 1,
-        }));
-      })
-      .catch((error) => toast(error))
-      .finally(() => {
-        this.scrollPageDown();
-        this.setState({ loading: false });
-      });
-  };
+  // getImagesList = () => {
+  //   const { query, page } = this.state;
+  //   this.setState({ loading: true });
+  //   getFetch(query, page)
+  //     .then((imagesList) => {
+  //       if (imagesList.length === 0) {
+  //         this.setState({ button: false });
+  //         toast.error("No results. Try another query");
+  //         return;
+  //       } else if (imagesList.length <= 12) {
+  //         this.setState({ button: false });
+  //       }
+  //       this.setState((prevState) => ({
+  //         imagesList: [...prevState.imagesList, ...imagesList],
+  //         page: prevState.page + 1,
+  //       }));
+  //     })
+  //     .catch((error) => toast(error))
+  //     .finally(() => {
+  //       this.scrollPageDown();
+  //       this.setState({ loading: false });
+  //     });
+  // };
 
   scrollPageDown = () => {
     window.scrollTo({
@@ -87,8 +92,8 @@ class App extends Component {
   };
 
   render() {
-    const { imagesList, loading, openModal, largeImageURL, button, tags } =
-      this.state;
+    const { loading, openModal, largeImageURL, button, tags } = this.state;
+    const { imagesList } = this.props;
     return (
       <div className="App">
         <ToastContainer autoClose={3000} />
@@ -107,5 +112,8 @@ class App extends Component {
     );
   }
 }
-
-export default App;
+const mapStateToProps = (state) => {
+  return { imagesList: galleryItems(state) };
+};
+const mapDispatchToProps = { getGalleryItems };
+export default connect(mapStateToProps, mapDispatchToProps)(App);
